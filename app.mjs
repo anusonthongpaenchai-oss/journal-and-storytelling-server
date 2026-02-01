@@ -7,7 +7,16 @@ import connectionPool from './utils/db.mjs';
 const app = express()
 const port = process.env.PORT || 4001
 
-app.use(cors())
+app.use(
+    cors({
+      origin: [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://journal-and-storytelling.vercel.app/",
+      ],
+    })
+  );
+
 app.use(express.json())
 
 app.get("/health", (req, res) => {
