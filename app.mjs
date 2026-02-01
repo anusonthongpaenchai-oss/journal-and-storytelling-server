@@ -7,6 +7,8 @@ import connectionPool from './utils/db.mjs';
 const app = express()
 const port = process.env.PORT || 4001
 
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+
 app.use(
     cors({
       origin: [
@@ -83,6 +85,10 @@ app.get("/posts", async (req, res) => {
 })
 
 
-app.listen(port, () => {
-    console.log(`Server is running at ${port}`)
-})
+if (!isVercel) {
+    app.listen(port, () => {
+        console.log(`Server is running at ${port}`)
+    })
+}
+
+export default app;
