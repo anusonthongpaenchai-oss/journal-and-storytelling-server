@@ -11,13 +11,13 @@ const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 
 app.use(
     cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://journal-and-storytelling.vercel.app/",
-      ],
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://journal-and-storytelling.vercel.app",
+        ],
     })
-  );
+);
 
 app.use(express.json())
 
@@ -67,11 +67,11 @@ app.post("/posts", async (req, res) => {
 
 
 app.get("/posts", async (req, res) => {
-
-    let results;
-
     try {
-        results = await connectionPool.query(`SELECT * from posts`);
+        const results = await connectionPool.query(`SELECT * from posts`);
+        return res.status(200).json({
+            data: results.rows,
+        })
     } catch (error) {
         res.status(500).json({
             message: "Server could not create post because database connection",
