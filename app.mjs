@@ -73,15 +73,12 @@ app.get("/posts", async (req, res) => {
             data: results.rows,
         })
     } catch (error) {
-        res.status(500).json({
-            message: "Server could not create post because database connection",
+        console.error("Error fetching posts:", error);
+        return res.status(500).json({
+            message: "Server could not fetch posts because database connection",
             error: error.message,
         })
     }
-
-    return res.status(200).json({
-        data: results.rows,
-    })
 })
 
 
