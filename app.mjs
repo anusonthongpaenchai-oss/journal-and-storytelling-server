@@ -11,7 +11,6 @@ import postsRouter from "./routes/posts.mjs";
 const app = express();
 const port = process.env.PORT || 4001;
 
-// Detect Vercel environment (serverless)
 const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 
 /* ================= Middleware ================= */
@@ -31,83 +30,62 @@ app.use(express.json());
 
 /* ================= Routes ================= */
 
-// Root endpoint
-app.get("/", (req, res) => {
-  res.status(200).json({
-    service: "Journal & Storytelling API",
-    status: "running",
-    docs: "/api-docs",
-    health: "/health",
-  });
-});
-
-// API routes
-app.use(postsRouter);
+app.use("/api", postsRouter);
 
 /* ================= Swagger ================= */
 
-app.get("/api-docs", (req, res) => {
-    const protocol =
-      req.headers["x-forwarded-proto"] || req.protocol;
-  
-    const host = req.get("host");
-    const baseUrl = `${protocol}://${host}`;
-  
-    res.send(`
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Journal & Storytelling API Docs</title>
-  
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
-      />
-    </head>
-    <body>
-      <div id="swagger-ui"></div>
-  
-      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
-  
-      <script>
-        window.onload = () => {
-          SwaggerUIBundle({
-            url: "${baseUrl}/swagger.json",
-            dom_id: "#swagger-ui",
-            presets: [
-              SwaggerUIBundle.presets.apis,
-              SwaggerUIStandalonePreset,
-            ],
-            layout: "StandaloneLayout",
-          });
-        };
-      </script>
-    </body>
-  </html>
-    `);
-  });  
+app.get("/", (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>API Docs</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
+    />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+
+    <script>
+      window.onload = () => {
+        SwaggerUIBundle({
+          url: "/swagger.json",
+          dom_id: "#swagger-ui",
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIStandalonePreset,
+          ],
+          layout: "StandaloneLayout",
+        });
+      };
+    </script>
+  </body>
+</html>
+  `);
+});
 
 // Swagger JSON
 app.get("/swagger.json", (req, res) => {
   res.json(swaggerSpec);
 });
 
-/* ================= Health Check ================= */
+/* ================= Health ================= */
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ message: "OK" });
+  res.json({ message: "OK" });
 });
 
 /* ================= Server ================= */
 
-// IMPORTANT:
-// - Vercel = export app only
-// - Local = listen normally
 if (!isVercel) {
   app.listen(port, () => {
-    console.log(`🚀 Server running on http://localhost:${port}`);
+    console.log(`🚀 Server running at http://localhost:${port}`);
   });
 }
 

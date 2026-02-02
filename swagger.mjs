@@ -4,19 +4,20 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "My API",
+      title: "Journal & Storytelling API",
       version: "1.0.0",
-      description: "API documentation for Express (ESM)",
+      description: "API documentation",
     },
+
     servers: [
       {
-        url: process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:4001",
+        url: "/api",
+        description: "API base path",
       },
     ],
   },
-  apis: ["./routes/*.mjs", "./app.mjs"],
+
+  apis: ["./routes/*.mjs"],
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
