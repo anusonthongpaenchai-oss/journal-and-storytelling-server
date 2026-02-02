@@ -19,37 +19,76 @@ const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 /* ================= Middleware ================= */
 
 app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://journal-and-storytelling.vercel.app",
-    ],
-  })
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://journal-and-storytelling.vercel.app",
+        ],
+    })
 );
 
 app.use(express.json());
 
 /* ================= Routes ================= */
 
+// Root endpoint (API entry point)
+app.get("/", (req, res) => {
+    res.status(200).json({
+        service: "Journal & Storytelling API",
+        status: "running",
+        docs: "/api-docs",
+        health: "/health",
+    });
+});
+
 // API routes
 app.use(postsRouter);
 
 // Swagger documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs", (req, res) => {
+    res.send(`
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>API Docs</title>
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/swagger-ui-dist/swagger-ui.css"
+      />
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+      <script>
+        window.onload = () => {
+          SwaggerUIBundle({
+            url: "/swagger.json",
+            dom_id: "#swagger-ui",
+          });
+        };
+      </script>
+    </body>
+  </html>
+    `);
+});
+
+app.get("/swagger.json", (req, res) => {
+    res.json(swaggerSpec);
+});
 
 // Health check endpoint
 app.get("/health", (req, res) => {
-  res.status(200).json({ message: "OK" });
+    res.status(200).json({ message: "OK" });
 });
 
 /* ================= Server ================= */
 
 // Start server only in non-serverless environments
 if (!isVercel) {
-  app.listen(port, () => {
-    console.log(`Server is running at ${port}`);
-  });
+    app.listen(port, () => {
+        console.log(`Server is running at ${port}`);
+    });
 }
 
 export default app;
