@@ -10,7 +10,9 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_URL || "http://localhost:4001",
+        url: process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:4001",
       },
     ],
   },
