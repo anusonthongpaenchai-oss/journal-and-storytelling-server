@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 
 import { swaggerSpec } from "./swagger.mjs";
-import postsRouter from "./routes/posts.mjs";
+import postsRouter from "./routes/post.mjs";
 
 /* ================= App Setup ================= */
 
@@ -30,7 +30,7 @@ app.use(express.json());
 
 /* ================= Routes ================= */
 
-app.use("/api", postsRouter);
+app.use("/posts", postsRouter);
 
 /* ================= Swagger ================= */
 

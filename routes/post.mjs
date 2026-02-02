@@ -1,10 +1,10 @@
-import express from "express";
+import { Router } from "express";
 import connectionPool from "../utils/db.mjs";
 
 /* ================= Router ================= */
 
 // Responsibility: handle post-related API endpoints
-const router = express.Router();
+const postsRouter = Router()
 
 /**
  * @swagger
@@ -15,7 +15,7 @@ const router = express.Router();
  *       200:
  *         description: Success
  */
-router.get("/posts", async (req, res) => {
+postsRouter.get("/", async (req, res) => {
   try {
     const results = await connectionPool.query("SELECT * FROM posts");
 
@@ -34,8 +34,40 @@ router.get("/posts", async (req, res) => {
  * /posts:
  *   post:
  *     summary: Create new post
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - image
+ *               - category_id
+ *               - content
+ *               - status_id
+ *             properties:
+ *               title:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *               category_id:
+ *                 type: integer
+ *               description:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               status_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Created post successfully
+ *       400:
+ *         description: Missing required fields from client
+ *       500:
+ *         description: Server error
  */
-router.post("/posts", async (req, res) => {
+postsRouter.post("/", async (req, res) => {
   const {
     title,
     image,
@@ -78,4 +110,4 @@ router.post("/posts", async (req, res) => {
   }
 });
 
-export default router;
+export default postsRouter;
