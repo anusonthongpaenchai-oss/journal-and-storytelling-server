@@ -1,10 +1,13 @@
 import { Router } from "express";
-import connectionPool from "../utils/db.mjs";
+import { validationPostData } from "../middlewares/post.validation.mjs";
+import postController from "../controllers/post.controller.mjs";
 
-/* ================= Router ================= */
-
+/* ================= Post Router ================= */
 // Responsibility: handle post-related API endpoints
-const postsRouter = Router()
+
+const postsRouter = Router();
+
+/* ================= GET Endpoints ================= */
 
 /**
  * @swagger
@@ -15,99 +18,18 @@ const postsRouter = Router()
  *       200:
  *         description: Success
  */
-postsRouter.get("/", async (req, res) => {
-  try {
-    const results = await connectionPool.query("SELECT * FROM posts");
+postsRouter.get("/", postController.getPosts);
 
-    res.status(200).json({
-      data: results.rows,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Server could not fetch posts",
-    });
-  }
-});
+// ===== Detail =====
+postsRouter.get("/:postId", postController.getPostById);
 
-/**
- * @swagger
- * /posts:
- *   post:
- *     summary: Create new post
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - image
- *               - category_id
- *               - content
- *               - status_id
- *             properties:
- *               title:
- *                 type: string
- *               image:
- *                 type: string
- *               category_id:
- *                 type: integer
- *               description:
- *                 type: string
- *               content:
- *                 type: string
- *               status_id:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Created post successfully
- *       400:
- *         description: Missing required fields from client
- *       500:
- *         description: Server error
- */
-postsRouter.post("/", async (req, res) => {
-  const {
-    title,
-    image,
-    category_id,
-    description,
-    content,
-    status_id,
-  } = req.body;
+// ===== Create =====
+postsRouter.post("/", [validationPostData], postController.createPost);
 
-  // Basic request validation
-  if (!title || !category_id || !content || !status_id || !image) {
-    return res.status(400).json({
-      message: "Missing required fields from client",
-    });
-  }
+// ===== Update =====
+postsRouter.put("/:postId", postController.updatePost);
 
-  try {
-    await connectionPool.query(
-      `
-        INSERT INTO posts (
-          title,
-          image,
-          category_id,
-          description,
-          content,
-          status_id
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `,
-      [title, image, category_id, description, content, status_id]
-    );
-
-    res.status(201).json({
-      message: "Created post successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Server could not create post because database connection",
-    });
-  }
-});
+// ===== Delete =====
+postsRouter.delete("/:postId", postController.deletePost);
 
 export default postsRouter;
