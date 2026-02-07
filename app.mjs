@@ -4,17 +4,16 @@ import express from "express";
 import cors from "cors";
 
 import { swaggerSpec } from "./swagger.mjs";
+
+/* ================= Router ================= */
 import postsRouter from "./routes/post.mjs";
 
-/* ================= App Setup ================= */
-
+/* ================= App ================= */
 const app = express();
 const port = process.env.PORT || 4001;
-
 const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 
 /* ================= Middleware ================= */
-
 app.use(
   cors({
     origin: [
@@ -29,11 +28,9 @@ app.use(
 app.use(express.json());
 
 /* ================= Routes ================= */
-
 app.use("/posts", postsRouter);
 
-/* ================= Swagger ================= */
-
+/* ================= Swagger Documentation ================= */
 app.get("/", (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -70,19 +67,17 @@ app.get("/", (req, res) => {
   `);
 });
 
-// Swagger JSON
+// Swagger JSON endpoint
 app.get("/swagger.json", (req, res) => {
   res.json(swaggerSpec);
 });
 
-/* ================= Health ================= */
-
+/* ================= Health Check ================= */
 app.get("/health", (req, res) => {
   res.json({ message: "OK" });
 });
 
-/* ================= Server ================= */
-
+/* ================= Server Initialization ================= */
 if (!isVercel) {
   app.listen(port, () => {
     console.log(`🚀 Server running at http://localhost:${port}`);

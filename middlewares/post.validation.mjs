@@ -1,28 +1,80 @@
-export const validationCreatePostData = (req, res, next) => {
+export const validationPostData = (req, res, next) => {
     const { title, image, category_id, description, content, status_id } = req.body;
-    const errors = [];
 
-    if (!title || typeof title !== 'string' || !title.trim()) {
-        errors.push("title is required and must be a non-empty string.");
-    }
-    if (!image || typeof image !== 'string' || !image.trim()) {
-        errors.push("image is required and must be a non-empty string.");
-    }
-    if (category_id === undefined || typeof category_id !== 'number') {
-        errors.push("category_id is required and must be a number.");
-    }
-    // description is optional
-
-    if (!content || typeof content !== 'string' || !content.trim()) {
-        errors.push("content is required and must be a non-empty string.");
-    }
-    if (status_id === undefined || typeof status_id !== 'number') {
-        errors.push("status_id is required and must be a number.");
+    /* ================= Type Validation ================= */
+    if (typeof title !== "string") {
+        return res.status(400).json({
+            message: "Title must be a string."
+        })
     }
 
-    if (errors.length > 0) {
-        return res.status(400).json({ message: "Incomplete data, please provide all required fields.", errors });
+    if (typeof image !== "string") {
+        return res.status(400).json({
+            message: "image must be a string."
+        })
     }
+
+    if (typeof category_id !== "number") {
+        return res.status(400).json({
+            message: "category_id must be a number."
+        })
+    }
+
+    if (typeof description !== "string") {
+        return res.status(400).json({
+            message: "description must be a string."
+        })
+    }
+
+    if (typeof content !== "string") {
+        return res.status(400).json({
+            message: "content must be a string."
+        })
+    }
+
+    if (typeof status_id !== "number") {
+        return res.status(400).json({
+            message: "status_id must be a number."
+        })
+    }
+
+    /* ================= Required Field Validation ================= */
+    if (!title.trim()) {
+        return res.status(400).json({
+            message: "Title is required.",
+        })
+    }
+
+    if (!image.trim()) {
+        return res.status(400).json({
+            message: "Image is required."
+        })
+    }
+
+    if (!category_id) {
+        return res.status(400).json({
+            message: "Category ID is required."
+        })
+    }
+
+    if (!description) {
+        return res.status(400).json({
+            message: "Description is required."
+        })
+    }
+
+    if (!content) {
+        return res.status(400).json({
+            message: "Content is required."
+        })
+    }
+
+    if (!status_id) {
+        return res.status(400).json({
+            message: "Status ID is required."
+        })
+    }
+
     next();
 }
 
