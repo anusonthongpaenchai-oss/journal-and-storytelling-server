@@ -170,7 +170,7 @@ class PostRepository {
       content ?? null,
       description ?? null,
       category_id ?? null,
-      status_id ?? 1,
+      status_id ?? null,
     ]);
 
     return result.rows[0];

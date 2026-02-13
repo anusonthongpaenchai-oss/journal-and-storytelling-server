@@ -11,7 +11,7 @@ const supabase = createClient(
 const authRouter = Router();
 
 // Route: Define paths and methods, call middleware and controller
-authRouter.post("/register", async (req, res) => {  ``
+authRouter.post("/register", async (req, res) => {
   const { email, password, username, name } = req.body;
   try {
     const usernameCheckQuery = `
@@ -86,26 +86,21 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.get("/get-user", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized: Token missing" });
-  }
+authRouter.get("/get-user", protectUser, async (req, res) => {
   try {
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error) {
-      return res.status(401).json({ error: "Unauthorized or token expired" });
-    }
-    const supabaseUserId = data.user.id;
+    const supabaseUserId = req.user.id;
     const query = `
       SELECT * FROM users
       WHERE id = $1
     `;
     const values = [supabaseUserId];
     const { rows } = await connectionPool.query(query, values);
+    if (!rows.length) {
+      return res.status(404).json({ error: "User profile not found" });
+    }
     res.status(200).json({
-      id: data.user.id,
-      email: data.user.email,
+      id: req.user.id,
+      email: req.user.email,
       username: rows[0].username,
       name: rows[0].name,
       role: rows[0].role,

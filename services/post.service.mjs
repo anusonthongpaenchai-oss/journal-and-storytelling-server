@@ -48,15 +48,16 @@ class PostService {
       image,
       title,
       content,
+      category_id,
       category,
       description,
       status_id
     } = data;
 
     /* ================= Category Processing ================= */
-    // Business logic: category name to id conversion
-    let categoryId = null;
-    if (category) {
+    // Prefer category_id from payload; fallback to category name for backward compatibility.
+    let categoryId = category_id ?? null;
+    if (categoryId === null && category) {
       const normalizedCategory = category.trim().toLowerCase();
       categoryId = await postRepository.findCategoryIdByName(normalizedCategory);
     }
