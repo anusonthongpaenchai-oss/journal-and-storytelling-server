@@ -1,13 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
 import connectionPool from "../utils/db.mjs";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+import { isDbConfigured } from "../utils/db.mjs";
+import supabase, { isSupabaseConfigured } from "../utils/supabase.mjs";
 
 const protectAdmin = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
+  if (!isDbConfigured || !isSupabaseConfigured) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
   if (!token) {
     return res.status(401).json({ error: "Unauthorized: Token missing" });
   }

@@ -1,18 +1,16 @@
 import { Router } from "express";
-import { createClient } from "@supabase/supabase-js";
-import connectionPool from "../utils/db.mjs";
+import connectionPool, { isDbConfigured } from "../utils/db.mjs";
+import supabase, { isSupabaseConfigured } from "../utils/supabase.mjs";
 import protectUser from "../middlewares/protectUser.mjs";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
 
 const authRouter = Router();
 
 // Route: Define paths and methods, call middleware and controller
 authRouter.post("/register", async (req, res) => {
   const { email, password, username, name } = req.body;
+  if (!isDbConfigured || !isSupabaseConfigured) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
   try {
     const usernameCheckQuery = `
       SELECT * FROM users
@@ -61,6 +59,9 @@ authRouter.post("/register", async (req, res) => {
 
 authRouter.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  if (!isSupabaseConfigured) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -87,6 +88,9 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.get("/get-user", protectUser, async (req, res) => {
+  if (!isDbConfigured) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
   try {
     const supabaseUserId = req.user.id;
     const query = `
@@ -114,6 +118,9 @@ authRouter.get("/get-user", protectUser, async (req, res) => {
 authRouter.put("/reset-password", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   const { oldPassword, newPassword } = req.body;
+  if (!isSupabaseConfigured) {
+    return res.status(500).json({ error: "Server configuration error" });
+  }
   if (!token) {
     return res.status(401).json({ error: "Unauthorized: Token missing" });
   }
