@@ -23,6 +23,11 @@ postsRouter.get("/", postController.getPosts);
 // ===== Detail =====
 postsRouter.get("/:postId", postController.getPostById);
 
+// ===== Likes Count =====
+postsRouter.get("/:postId/likes-count", postController.getLikeCount);
+postsRouter.patch("/:postId/likes-count", postController.incrementLikeCount);
+postsRouter.patch("/:postId/likes-count/decrement", postController.decrementLikeCount);
+
 // ===== Create =====
 postsRouter.post("/", [validationPostData], postController.createPost);
 

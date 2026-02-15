@@ -203,6 +203,38 @@ class PostRepository {
 
     return result.rowCount > 0 ? result.rows[0].id : null;
   }
+
+  async getLikeCount(id) {
+    const result = await connectionPool.query(`
+      SELECT likes_count
+      FROM posts
+      WHERE id = $1
+    `, [id]);
+
+    return result.rows[0];
+  }
+
+  async incrementLikeCount(id) {
+    const result = await connectionPool.query(`
+      UPDATE posts
+      SET likes_count = COALESCE(likes_count, 0) + 1
+      WHERE id = $1
+      RETURNING id, likes_count
+    `, [id]);
+
+    return result.rows[0];
+  }
+
+  async decrementLikeCount(id) {
+    const result = await connectionPool.query(`
+      UPDATE posts
+      SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
+      WHERE id = $1
+      RETURNING id, likes_count
+    `, [id]);
+
+    return result.rows[0];
+  }
 }
 
 export default new PostRepository();
