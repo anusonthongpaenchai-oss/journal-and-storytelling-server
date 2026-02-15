@@ -113,6 +113,69 @@ class PostController {
       });
     }
   }
+
+  async getLikeCount(req, res) {
+    try {
+      const postId = req.params.postId;
+      const result = await postService.getLikeCount(postId);
+      return res.status(200).json(result);
+    } catch (error) {
+      if (error.message === "Post not found") {
+        return res.status(404).json({
+          message: "Server could not find a requested post"
+        });
+      }
+
+      console.error("Get like count error:", error);
+      return res.status(500).json({
+        message: "Server could not read likes count due to database connection"
+      });
+    }
+  }
+
+  async incrementLikeCount(req, res) {
+    try {
+      const postId = req.params.postId;
+      const result = await postService.incrementLikeCount(postId);
+      return res.status(200).json({
+        message: "Updated likes count successfully",
+        ...result
+      });
+    } catch (error) {
+      if (error.message === "Post not found") {
+        return res.status(404).json({
+          message: "Server could not find a requested post to update likes"
+        });
+      }
+
+      console.error("Increment like count error:", error);
+      return res.status(500).json({
+        message: "Server could not update likes count due to database connection"
+      });
+    }
+  }
+
+  async decrementLikeCount(req, res) {
+    try {
+      const postId = req.params.postId;
+      const result = await postService.decrementLikeCount(postId);
+      return res.status(200).json({
+        message: "Updated likes count successfully",
+        ...result
+      });
+    } catch (error) {
+      if (error.message === "Post not found") {
+        return res.status(404).json({
+          message: "Server could not find a requested post to update likes"
+        });
+      }
+
+      console.error("Decrement like count error:", error);
+      return res.status(500).json({
+        message: "Server could not update likes count due to database connection"
+      });
+    }
+  }
 }
 
 export default new PostController();

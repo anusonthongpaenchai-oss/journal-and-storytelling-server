@@ -114,6 +114,36 @@ class PostService {
 
     return await postRepository.delete(id);
   }
+
+  async getLikeCount(id) {
+    const exists = await postRepository.checkExists(id);
+    if (!exists) {
+      throw new Error("Post not found");
+    }
+
+    const result = await postRepository.getLikeCount(id);
+    return { postId: Number(id), likesCount: result.likes_count ?? 0 };
+  }
+
+  async incrementLikeCount(id) {
+    const exists = await postRepository.checkExists(id);
+    if (!exists) {
+      throw new Error("Post not found");
+    }
+
+    const result = await postRepository.incrementLikeCount(id);
+    return { postId: result.id, likesCount: result.likes_count };
+  }
+
+  async decrementLikeCount(id) {
+    const exists = await postRepository.checkExists(id);
+    if (!exists) {
+      throw new Error("Post not found");
+    }
+
+    const result = await postRepository.decrementLikeCount(id);
+    return { postId: result.id, likesCount: result.likes_count };
+  }
 }
 
 export default new PostService();

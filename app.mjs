@@ -9,6 +9,7 @@ import { swaggerSpec } from "./swagger.mjs";
 import postsRouter from "./routes/post.mjs";
 import authRouter from "./routes/auth.mjs";
 import settingRouter from "./routes/setting.mjs";
+import commentRouter from "./routes/comment.mjs";
 
 /* ================= App ================= */
 const app = express();
@@ -33,6 +34,7 @@ app.use(express.json());
 app.use("/posts", postsRouter);
 app.use("/auth", authRouter);
 app.use("/setting", settingRouter)
+app.use("/comments", commentRouter)
 
 /* ================= Swagger Documentation ================= */
 app.get("/", (req, res) => {
