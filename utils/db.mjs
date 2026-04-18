@@ -1,14 +1,16 @@
 import * as pg from "pg";
 
 const { Pool } = pg.default;
+const connectionString = process.env.CONNECTION_STRING;
 
-if (!process.env.CONNECTION_STRING) {
-    console.error("CONNECTION_STRING is not set in environment variables");
-    throw new Error("CONNECTION_STRING is required");
+if (!connectionString) {
+  console.error("CONNECTION_STRING is not set in environment variables");
 }
 
-const connectionPool = new Pool({
-    connectionString: process.env.CONNECTION_STRING,
-})
+const connectionPool = connectionString
+  ? new Pool({ connectionString })
+  : null;
+
+export const isDbConfigured = Boolean(connectionString);
 
 export default connectionPool;
