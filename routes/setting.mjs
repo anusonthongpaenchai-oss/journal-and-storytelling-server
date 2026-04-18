@@ -14,9 +14,13 @@ const imageFileUpload = multerUpload.fields([
 
 settingRouter.put("/profile", [imageFileUpload, protectUser], async (req, res) => {
   try {
-    const { name, username } = req.body;
+    const { name, username, bio } = req.body;
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    if (typeof bio === "string" && bio.length > 120) {
+      return res.status(400).json({ message: "Bio must be 120 characters or fewer" });
+    }
 
     let profilePicUrl = null;
 
@@ -39,11 +43,12 @@ settingRouter.put("/profile", [imageFileUpload, protectUser], async (req, res) =
       SET
         name = COALESCE($1, name),
         username = COALESCE($2, username),
-        profile_pic = COALESCE($3, profile_pic)
-      WHERE id = $4
-      RETURNING id, name, username, role, profile_pic AS "profilePic"
+        profile_pic = COALESCE($3, profile_pic),
+        bio = COALESCE($4, bio)
+      WHERE id = $5
+      RETURNING id, name, username, role, profile_pic AS "profilePic", bio
     `;
-    const values = [name || null, username || null, profilePicUrl, userId];
+    const values = [name || null, username || null, profilePicUrl, bio ?? null, userId];
     const result = await connectionPool.query(query, values);
 
     return res.status(200).json(result.rows[0]);

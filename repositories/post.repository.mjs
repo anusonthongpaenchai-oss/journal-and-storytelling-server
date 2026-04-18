@@ -2,7 +2,7 @@ import connectionPool from "../utils/db.mjs";
 
 class PostRepository {
   async findAll(filters = {}, pagination = {}) {
-    const { category, keyword } = filters;
+    const { category, keyword, status } = filters;
     const { limit, offset } = pagination;
 
     /* ================= Query Building ================= */
@@ -25,6 +25,11 @@ class PostRepository {
       `);
     }
 
+    if (status) {
+      values.push(status);
+      whereConditions.push(`LOWER(statuses.status) = $${values.length}`);
+    }
+
     const whereSQL = whereConditions.length > 0
       ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
@@ -40,9 +45,15 @@ class PostRepository {
         posts.content,
         posts.date,
         posts.likes_count,
-        categories.name AS category
+        posts.author_id,
+        categories.name AS category,
+        statuses.status AS status,
+        COALESCE(users.name, users.username, 'Unknown author') AS author,
+        users.profile_pic AS "authorProfilePic"
       FROM posts
       LEFT JOIN categories ON posts.category_id = categories.id
+      LEFT JOIN statuses ON posts.status_id = statuses.id
+      LEFT JOIN users ON posts.author_id = users.id
       ${whereSQL}
       ORDER BY posts.id ASC
       LIMIT $${values.length - 1}
@@ -53,7 +64,7 @@ class PostRepository {
   }
 
   async count(filters = {}) {
-    const { category, keyword } = filters;
+    const { category, keyword, status } = filters;
 
     /* ================= Query Building ================= */
     const whereConditions = [];
@@ -75,6 +86,11 @@ class PostRepository {
       `);
     }
 
+    if (status) {
+      values.push(status);
+      whereConditions.push(`LOWER(statuses.status) = $${values.length}`);
+    }
+
     const whereSQL = whereConditions.length > 0
       ? `WHERE ${whereConditions.join(" AND ")}` : "";
 
@@ -82,6 +98,7 @@ class PostRepository {
       SELECT COUNT(*) 
       FROM posts
       LEFT JOIN categories ON posts.category_id = categories.id
+      LEFT JOIN statuses ON posts.status_id = statuses.id
       ${whereSQL}
     `, values);
 
@@ -98,11 +115,17 @@ class PostRepository {
         posts.content,
         posts.date,
         posts.likes_count,
+        posts.status_id,
+        posts.author_id,
         categories.name AS category,
-        statuses.status AS status
+        statuses.status AS status,
+        COALESCE(users.name, users.username, 'Unknown author') AS author,
+        users.profile_pic AS "authorProfilePic",
+        users.bio AS "authorBio"
       FROM posts
       LEFT JOIN categories ON posts.category_id = categories.id
       LEFT JOIN statuses ON posts.status_id = statuses.id
+      LEFT JOIN users ON posts.author_id = users.id
       WHERE posts.id = $1
     `, [id]);
 
@@ -116,7 +139,8 @@ class PostRepository {
       content,
       category_id,
       description,
-      status_id
+      status_id,
+      author_id
     } = data;
 
     const result = await connectionPool.query(`
@@ -126,9 +150,10 @@ class PostRepository {
         content,
         category_id,
         description,
-        status_id
+        status_id,
+        author_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `, [
       title,
@@ -137,6 +162,7 @@ class PostRepository {
       category_id ?? null,
       description ?? null,
       status_id ?? null,
+      author_id ?? null,
     ]);
 
     return result.rows[0];

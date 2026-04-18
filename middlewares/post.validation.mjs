@@ -1,5 +1,6 @@
 export const validationPostData = (req, res, next) => {
-    const { title, image, category_id, description, content, status_id } = req.body;
+    const { title, image, category_id, category, description, content, status_id } = req.body;
+    const hasUploadedImage = Boolean(req.file);
 
     /* ================= Type Validation ================= */
     if (typeof title !== "string") {
@@ -8,15 +9,21 @@ export const validationPostData = (req, res, next) => {
         })
     }
 
-    if (typeof image !== "string") {
+    if (!hasUploadedImage && typeof image !== "string") {
         return res.status(400).json({
             message: "image must be a string."
         })
     }
 
-    if (typeof category_id !== "number") {
+    if (category_id !== undefined && typeof category_id !== "number") {
         return res.status(400).json({
             message: "category_id must be a number."
+        })
+    }
+
+    if (category !== undefined && typeof category !== "string") {
+        return res.status(400).json({
+            message: "category must be a string."
         })
     }
 
@@ -45,15 +52,15 @@ export const validationPostData = (req, res, next) => {
         })
     }
 
-    if (!image.trim()) {
+    if (!hasUploadedImage && !image?.trim()) {
         return res.status(400).json({
             message: "Image is required."
         })
     }
 
-    if (!category_id) {
+    if (!category_id && !(typeof category === "string" && category.trim())) {
         return res.status(400).json({
-            message: "Category ID is required."
+            message: "Category or Category ID is required."
         })
     }
 

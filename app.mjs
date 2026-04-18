@@ -7,9 +7,11 @@ import { swaggerSpec } from "./swagger.mjs";
 
 /* ================= Router ================= */
 import postsRouter from "./routes/post.mjs";
+import categoryRouter from "./routes/category.mjs";
 import authRouter from "./routes/auth.mjs";
 import settingRouter from "./routes/setting.mjs";
 import commentRouter from "./routes/comment.mjs";
+import notificationRouter from "./routes/notification.mjs";
 
 /* ================= App ================= */
 const app = express();
@@ -28,13 +30,16 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 /* ================= Routes ================= */
 app.use("/posts", postsRouter);
+app.use("/categories", categoryRouter);
 app.use("/auth", authRouter);
 app.use("/setting", settingRouter)
 app.use("/comments", commentRouter)
+app.use("/notifications", notificationRouter)
 
 /* ================= Swagger Documentation ================= */
 app.get("/", (req, res) => {

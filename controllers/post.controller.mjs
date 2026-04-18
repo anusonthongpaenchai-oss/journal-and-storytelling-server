@@ -5,9 +5,9 @@ class PostController {
   // Responsibility: retrieve posts with optional pagination and filters
   async getPosts(req, res) {
     try {
-      const { page, limit, category, keyword } = req.query;
+      const { page, limit, category, keyword, status } = req.query;
 
-      const result = await postService.getPosts(page, limit, { category, keyword });
+      const result = await postService.getPosts(page, limit, { category, keyword, status });
 
       return res.status(200).json(result);
     } catch (error) {
@@ -45,7 +45,10 @@ class PostController {
   // Responsibility: create a new post from request payload
   async createPost(req, res) {
     try {
-      await postService.createPost(req.body);
+      await postService.createPost({
+        ...req.body,
+        author_id: req.user?.id,
+      });
 
       return res.status(201).json({
         message: "Created post successfully"
@@ -136,12 +139,18 @@ class PostController {
   async incrementLikeCount(req, res) {
     try {
       const postId = req.params.postId;
-      const result = await postService.incrementLikeCount(postId);
+      const result = await postService.incrementLikeCount(postId, req.user?.id);
       return res.status(200).json({
         message: "Updated likes count successfully",
         ...result
       });
     } catch (error) {
+      if (error.message === "Unauthorized") {
+        return res.status(401).json({
+          message: "Unauthorized"
+        });
+      }
+
       if (error.message === "Post not found") {
         return res.status(404).json({
           message: "Server could not find a requested post to update likes"
@@ -158,12 +167,18 @@ class PostController {
   async decrementLikeCount(req, res) {
     try {
       const postId = req.params.postId;
-      const result = await postService.decrementLikeCount(postId);
+      const result = await postService.decrementLikeCount(postId, req.user?.id);
       return res.status(200).json({
         message: "Updated likes count successfully",
         ...result
       });
     } catch (error) {
+      if (error.message === "Unauthorized") {
+        return res.status(401).json({
+          message: "Unauthorized"
+        });
+      }
+
       if (error.message === "Post not found") {
         return res.status(404).json({
           message: "Server could not find a requested post to update likes"

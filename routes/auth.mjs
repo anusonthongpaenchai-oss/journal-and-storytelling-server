@@ -5,22 +5,36 @@ import protectUser from "../middlewares/protectUser.mjs";
 
 const authRouter = Router();
 
-// Route: Define paths and methods, call middleware and controller
-authRouter.post("/register", async (req, res) => {
+async function findUserByUsername(username) {
+  const usernameCheckQuery = `
+    SELECT * FROM users
+    WHERE username = $1
+  `;
+
+  const { rows } = await connectionPool.query(usernameCheckQuery, [username]);
+  return rows;
+}
+
+async function findUserById(userId) {
+  const query = `
+    SELECT * FROM users
+    WHERE id = $1
+  `;
+
+  const { rows } = await connectionPool.query(query, [userId]);
+  return rows[0] || null;
+}
+
+async function registerUser(req, res, role) {
   const { email, password, username, name } = req.body;
+
   if (!isDbConfigured || !isSupabaseConfigured) {
     return res.status(500).json({ error: "Server configuration error" });
   }
+
   try {
-    const usernameCheckQuery = `
-      SELECT * FROM users
-      WHERE username = $1
-    `;
-    const usernameCheckValues = [username];
-    const { rows: existingUser } = await connectionPool.query(
-      usernameCheckQuery,
-      usernameCheckValues
-    );
+    const existingUser = await findUserByUsername(username);
+
     if (existingUser.length > 0) {
       return res.status(400).json({ error: "This username is already taken" });
     }
@@ -29,12 +43,14 @@ authRouter.post("/register", async (req, res) => {
       email,
       password,
     });
+
     if (supabaseError) {
       if (supabaseError.code === "user_already_exists") {
         return res
           .status(400)
           .json({ error: "User with this email already exists" });
       }
+
       return res
         .status(400)
         .json({ error: "Failed to create user. Please try again." });
@@ -46,27 +62,33 @@ authRouter.post("/register", async (req, res) => {
       VALUES ($1, $2, $3, $4)
       RETURNING *;
     `;
-    const values = [supabaseUserId, username, name, "user"];
+    const values = [supabaseUserId, username, name, role];
     const { rows } = await connectionPool.query(query, values);
-    res.status(201).json({
-      message: "User created successfully",
+
+    return res.status(201).json({
+      message: `${role} created successfully`,
       user: rows[0],
     });
   } catch (error) {
-    res.status(500).json({ error: "An error occurred during registration" });
+    return res
+      .status(500)
+      .json({ error: "An error occurred during registration" });
   }
-});
+}
 
-authRouter.post("/login", async (req, res) => {
+async function loginUser(req, res, requiredRole = null) {
   const { email, password } = req.body;
-  if (!isSupabaseConfigured) {
+
+  if (!isDbConfigured || !isSupabaseConfigured) {
     return res.status(500).json({ error: "Server configuration error" });
   }
+
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     if (error) {
       if (
         error.code === "invalid_credentials" ||
@@ -76,8 +98,24 @@ authRouter.post("/login", async (req, res) => {
           error: "Your password is incorrect or this email doesn't exist",
         });
       }
+
       return res.status(400).json({ error: error.message });
     }
+
+    if (requiredRole) {
+      const user = await findUserById(data.user.id);
+
+      if (!user) {
+        return res.status(404).json({ error: "User profile not found" });
+      }
+
+      if (user.role !== requiredRole) {
+        return res.status(403).json({
+          error: "Forbidden: You do not have admin access",
+        });
+      }
+    }
+
     return res.status(200).json({
       message: "Signed in successfully",
       access_token: data.session.access_token,
@@ -85,33 +123,47 @@ authRouter.post("/login", async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: "An error occurred during login" });
   }
+}
+
+authRouter.post("/register", async (req, res) => {
+  return registerUser(req, res, "user");
+});
+
+authRouter.post("/admin/register", async (req, res) => {
+  return registerUser(req, res, "admin");
+});
+
+authRouter.post("/login", async (req, res) => {
+  return loginUser(req, res);
+});
+
+authRouter.post("/admin/login", async (req, res) => {
+  return loginUser(req, res, "admin");
 });
 
 authRouter.get("/get-user", protectUser, async (req, res) => {
   if (!isDbConfigured) {
     return res.status(500).json({ error: "Server configuration error" });
   }
+
   try {
-    const supabaseUserId = req.user.id;
-    const query = `
-      SELECT * FROM users
-      WHERE id = $1
-    `;
-    const values = [supabaseUserId];
-    const { rows } = await connectionPool.query(query, values);
-    if (!rows.length) {
+    const user = await findUserById(req.user.id);
+
+    if (!user) {
       return res.status(404).json({ error: "User profile not found" });
     }
-    res.status(200).json({
+
+    return res.status(200).json({
       id: req.user.id,
       email: req.user.email,
-      username: rows[0].username,
-      name: rows[0].name,
-      role: rows[0].role,
-      profilePic: rows[0].profile_pic,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      profilePic: user.profile_pic,
+      bio: user.bio,
     });
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -1,7 +1,10 @@
+import notificationRepository from "../repositories/notification.repository.mjs";
 import postRepository from "../repositories/post.repository.mjs";
 
 class PostService {
   async getPosts(page = 1, limit = 6, filters = {}) {
+    await notificationRepository.ensureSchema();
+
     /* ================= Pagination Logic ================= */
     // Business logic: validate and normalize pagination
     page = Math.max(parseInt(page) || 1, 1);
@@ -12,6 +15,9 @@ class PostService {
     const normalizedFilters = { ...filters };
     if (normalizedFilters.category) {
       normalizedFilters.category = normalizedFilters.category.trim().toLowerCase();
+    }
+    if (normalizedFilters.status) {
+      normalizedFilters.status = normalizedFilters.status.trim().toLowerCase();
     }
 
     /* ================= Data Fetching ================= */
@@ -35,6 +41,8 @@ class PostService {
   }
 
   async getPostById(id) {
+    await notificationRepository.ensureSchema();
+
     /* ================= Existence Check ================= */
     const post = await postRepository.findById(id);
     if (!post) {
@@ -44,6 +52,8 @@ class PostService {
   }
 
   async createPost(data) {
+    await notificationRepository.ensureSchema();
+
     const {
       image,
       title,
@@ -51,7 +61,8 @@ class PostService {
       category_id,
       category,
       description,
-      status_id
+      status_id,
+      author_id
     } = data;
 
     /* ================= Category Processing ================= */
@@ -70,15 +81,19 @@ class PostService {
       content,
       category_id: categoryId,
       description,
-      status_id
+      status_id,
+      author_id
     });
   }
 
   async updatePost(id, data) {
+    await notificationRepository.ensureSchema();
+
     const {
       image,
       title,
       content,
+      category,
       category_id,
       description,
       status_id
@@ -95,17 +110,25 @@ class PostService {
       throw new Error("Post not found");
     }
 
+    let categoryId = category_id ?? null;
+    if ((categoryId === null || categoryId === undefined) && category) {
+      const normalizedCategory = category.trim().toLowerCase();
+      categoryId = await postRepository.findCategoryIdByName(normalizedCategory);
+    }
+
     return await postRepository.update(id, {
       image,
       title,
       content,
       description,
-      category_id,
+      category_id: categoryId,
       status_id
     });
   }
 
   async deletePost(id) {
+    await notificationRepository.ensureSchema();
+
     /* ================= Existence Check ================= */
     const exists = await postRepository.checkExists(id);
     if (!exists) {
@@ -116,6 +139,8 @@ class PostService {
   }
 
   async getLikeCount(id) {
+    await notificationRepository.ensureSchema();
+
     const exists = await postRepository.checkExists(id);
     if (!exists) {
       throw new Error("Post not found");
@@ -125,20 +150,43 @@ class PostService {
     return { postId: Number(id), likesCount: result.likes_count ?? 0 };
   }
 
-  async incrementLikeCount(id) {
+  async incrementLikeCount(id, userId) {
     const exists = await postRepository.checkExists(id);
     if (!exists) {
       throw new Error("Post not found");
     }
 
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    await notificationRepository.ensureSchema();
+    const hasUserLiked = await notificationRepository.hasUserLikedPost(id, userId);
+    if (hasUserLiked) {
+      const result = await postRepository.getLikeCount(id);
+      return { postId: Number(id), likesCount: result.likes_count ?? 0 };
+    }
+
+    await notificationRepository.addLike(id, userId);
     const result = await postRepository.incrementLikeCount(id);
     return { postId: result.id, likesCount: result.likes_count };
   }
 
-  async decrementLikeCount(id) {
+  async decrementLikeCount(id, userId) {
     const exists = await postRepository.checkExists(id);
     if (!exists) {
       throw new Error("Post not found");
+    }
+
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    await notificationRepository.ensureSchema();
+    const removed = await notificationRepository.removeLike(id, userId);
+    if (!removed) {
+      const result = await postRepository.getLikeCount(id);
+      return { postId: Number(id), likesCount: result.likes_count ?? 0 };
     }
 
     const result = await postRepository.decrementLikeCount(id);
